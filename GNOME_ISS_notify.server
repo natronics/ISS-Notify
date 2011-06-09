@@ -1,6 +1,6 @@
 <oaf_info>
 
-	<oaf_server iid="OAFIID:ISS_Gnome_Panel_Factory" type="exe" location="/usr/local/bin/ISS-Notify-applet.py">
+	<oaf_server iid="OAFIID:ISS_Gnome_Panel_Factory" type="exe" location="/usr/local/bin/ISS-notify-applet.py">
 		<oaf_attribute name="repo_ids" type="stringv">
 			<item value="IDL:Bonobo/GenericFactory:1.0"/>
 			<item value="IDL:Bonobo/Unknown:1.0"/>
@@ -18,7 +18,7 @@
 		<oaf_attribute name="name" type="string" value="ISS Monitor"/>
 		<oaf_attribute name="description" type="string" value="Tells you if the ISS is overhead"/>
 		<oaf_attribute name="panel:category" type="string" value="Utility"/>
-		<oaf_attribute name="panel:icon" type="string" value="ISS_Notify_Icon.png"/>
+		<oaf_attribute name="panel:icon" type="string" value="ISS_notify_icon.png"/>
 	</oaf_server>
 
 </oaf_info>

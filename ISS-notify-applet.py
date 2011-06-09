@@ -10,22 +10,38 @@ import signal
 import serial
 
 class lamp():
-  def lights_on(self):
-    print "lights on"
+  """Allows the use of a serial connected lamp as the alarm"""
+  
+  device = '/dev/ttyACM0'
+  
+  def write_to_device(self, c):
+    """Writes a characer out via serial"""
     try:
-      ser = serial.Serial('/dev/ttyACM0', 9600, timeout=0.5)
-      ser.write("R")
+      ser = serial.Serial(self.device, 9600, timeout=0.5)
+      ser.write(c)
       ser.close()
     except:
-      print "dag yo"
+      print "Failed to find Arduino, continuing happily"
       pass
+  
+  def lights_on(self):
+    """Send the signal to turn on the lights"""
+    self.write_to_device('1')
+      
+  def lights_off(self):
+    """Send the signal to turn off the lights"""
+    self.write_to_device('0')
 
 class HeavensAbove:
+  """Scrapes data about the ISS from http://heavens-above.com"""
+  
   lat = 0
   lon = 0
   
-  next_pass = {}
-  seconds_to_next_pass = 0
+  # Defaults are useful for debuging. Comment out the first update to use.
+  next_pass             = datetime.datetime.today() + datetime.timedelta(0,30)
+  seconds_to_next_pass  = 30
+  pass_length           = 60
 
   def __init__(self, lat, lon):
     self.lat = lat
@@ -42,9 +58,7 @@ class HeavensAbove:
     req = urllib2.Request(url)
     response = urllib2.urlopen(req)
     data = response.read()
-    #print data
 
-    #data = open('snap.html','r').read()
     data = remove_chars(data, '\t\n\r')
 
     table = data.split(r'<table BORDER CELLPADDING=5>')[1]
@@ -92,31 +106,38 @@ class HeavensAbove:
     return passes_dict
 
   def get_next_pass(self):
-    passes = self.get_passes()
-    now = datetime.datetime.today()
-    for i in range(len(passes)):
-      next_pass = passes[i]["begin_time"]
-      timedelta = next_pass - now
-      past = timedelta.days
-      if past >= 0:
-        #print "Next Pass: ", next_pass
-        alarm_sleep_time = timedelta.seconds
-        #print "  in %d seconds" % alarm_sleep_time
-        break
-    self.next_pass              = next_pass
-    self.seconds_to_next_pass   = alarm_sleep_time
+    try:
+      passes = self.get_passes()
+    
+      now = datetime.datetime.today()
+      for i in range(len(passes)):
+        next_pass = passes[i]["begin_time"]
+        timedelta = next_pass - now
+        past = timedelta.days
+        if past >= 0:
+          #print "Next Pass: ", next_pass
+          alarm_sleep_time = timedelta.seconds
+          #print "  in %d seconds" % alarm_sleep_time
+          break
+
+      # How long will this pass last?
+      duration = passes[i]["end_time"] - next_pass
+      
+      self.next_pass              = next_pass
+      self.seconds_to_next_pass   = alarm_sleep_time
+      self.pass_length            = duration.seconds
+    except:
+      print "Time lookup failed!!"
   
 class PyApplet():
+  """A gnome-panel applet that alerts a user if the International Space Station is overhead"""
 
-  next_pass   = datetime.datetime.today()
-  
-  iss_blank   = gtk.image_new_from_file("/home/natronics/Dropbox/Code/Python/NeaLamp/ISS/iss_blank.png")
-  iss_pass    = gtk.image_new_from_file("/home/natronics/Dropbox/Code/Python/NeaLamp/ISS/iss_pass.png")
-  
+  ha          = HeavensAbove(45.47361, -122.64931)
+  lamp        = lamp()
+  iss_blank   = gtk.image_new_from_file("/usr/share/pixmaps/iss_blank.png")
+  iss_pass    = gtk.image_new_from_file("/usr/share/pixmaps/iss_pass.png")
   polltime    = 10
-    
-  lamp = lamp()
-  
+
   def __init__(self, applet):
     self.applet=applet
 
@@ -131,26 +152,55 @@ class PyApplet():
     self.applet.set_background_widget(self.applet)
     
     # Get Pass:
-    ha = HeavensAbove(45.47361, -122.64931)
-    ha.get_next_pass()
-    self.next_pass = ha.next_pass
+    self.ha.get_next_pass()
     
     # Set alarm
-    signal.signal(signal.SIGALRM, self.pass_alarm)
-    signal.alarm(ha.seconds_to_next_pass)
+    signal.signal(signal.SIGALRM, self.pass_begin_alarm)
+    signal.alarm(self.ha.seconds_to_next_pass)
     
+    # Polling, not sure how to avoid this :/
     gobject.timeout_add_seconds(self.polltime, self.update)
     
-    # Show All
+    # We've now packed the UI, so show it
     self.applet.show_all()
 
   def update(self):
+    """Polling to check the status of signal.alarm()""" 
     gobject.timeout_add_seconds(self.polltime, self.update)
     
-  def pass_alarm(self, signum, stack):
+  def pass_begin_alarm(self, signum, stack):
+    """Triggered when the begin pass alarm goes off"""
+    # Turn on lights
+    self.begin_pass()
+    
+    # Set the end pass alarm
+    signal.alarm(0)
+    signal.signal(signal.SIGALRM, self.pass_end_alarm)
+    signal.alarm(self.ha.pass_length)
+    return True
+    
+  def pass_end_alarm(self, signum, stack):
+    """Triggered when the end pass alarm goes off"""
+    # Turn lights off
+    self.end_pass()
+
+    signal.alarm(0)
+    
+    # Get the next pass
+    self.ha.get_next_pass()
+    
+    # Set a new pass alarm
+    signal.signal(signal.SIGALRM, self.pass_end_alarm)
+    signal.alarm(self.ha.seconds_to_next_pass)
+    return True
+  
+  def begin_pass(self):
     self.button.set_image(self.iss_pass)
     self.lamp.lights_on()
-    return True
+  
+  def end_pass(self):
+    self.button.set_image(self.iss_blank)
+    self.lamp.lights_off()
   
   def showMenu(self, button, event, applet):
     if event.type == gtk.gdk.BUTTON_PRESS and event.button == 3:
@@ -158,25 +208,40 @@ class PyApplet():
 		  self.create_menu(applet)
 
   def create_menu(self, applet):
-    next_pass_string      = self.next_pass.strftime("%a %H:%M:%S")
-    time_to_pass          = self.next_pass - datetime.datetime.today()
+    next_pass_string      = self.ha.next_pass.strftime("%a %H:%M:%S")
+    time_to_pass          = self.ha.next_pass - datetime.datetime.today()
     time_to_pass_days     = time_to_pass.days
     time_to_pass_minutes  = int(time_to_pass.seconds / 60.0)
-    next_pass_string      = next_pass_string + " - %d days, %d minutes" % (time_to_pass_days, time_to_pass_minutes)
+    
+    if time_to_pass_days < 0:
+      next_pass_string = "Not sure"
+    else:
+      next_pass_string      = next_pass_string + " - %d days, %d minutes" % (time_to_pass_days, time_to_pass_minutes)
     
     propxml="""
       <popup name="button3">
-        <menuitem name="NextPass" verb="update_pass" label="_Next Pass: %s" />
+        <menuitem name="NextPass" verb="next_pass" label="_Next Pass: %s" />
+        <menuitem name="Update" verb="update" label="_Update" />
         <menuitem name="LampTest" verb="test_lamp" label="_Test Lamp" />
         <menuitem name="AboutMenu" verb="about" label="_About" pixtype="stock" pixname="gtk-about"/>
       </popup>""" % (next_pass_string)
     
-    verbs = [("update_pass", self.showAboutDialog), ("test_lamp", self.test_lamp), ("about", self.showAboutDialog)]
+    verbs = [("next_pass", self.showAboutDialog), ("update", self.update_pass_data), ("test_lamp", self.test_lamp), ("about", self.showAboutDialog)]
     
     applet.setup_menu(propxml, verbs, None)
   
   def test_lamp(self, widget, menuname):
     self.lamp.lights_on()
+    # short delay
+    for i in range(1000):
+      k = i + 1
+    self.lamp.lights_off()
+  
+  def update_pass_data(self, widget, menuname):
+    self.ha.get_next_pass()
+    signal.alarm(0)
+    signal.signal(signal.SIGALRM, self.pass_begin_alarm)
+    signal.alarm(self.ha.seconds_to_next_pass)
   
   def showAboutDialog(self, widget, menuname):
     #print menuname

@@ -1,6 +1,6 @@
-# Python Gnome-Panel Applet for the International Space Station
+# Python Gnome-Panel Applet for International Space Station Passes
 
-This is a quick and dirty python app that runs in the Gnome panel and acts as an alarm for when the Internations Space Station is overhead.
+This is a quick and dirty python app that runs in the Gnome panel and acts as an alarm for when the [Internations Space Station](http://en.wikipedia.org/wiki/International_Space_Station) is overhead.
 
 When loaded it downloads a list of upcoming passes from [heavens-above.com](http://heavens-above.com).  It then goes to sleep and the next time the ISS is overhead it turns red and, optionally, lights LED's on an ardruino.
 
@@ -34,7 +34,9 @@ See the circuit diagram and firmware in the arduino folder. You might have to se
 
 Find this line in ISS-notify-applet.py
 
-    ser = serial.Serial('/dev/ttyACM0', 9600, timeout=0.5)
+    class lamp():
+
+    device = '/dev/ttyACM0'
 
 Make `/dev/ttyACM0` the right thing (`dmesg | tail` is often useful). Example of the udev rule that worked for me
 

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e 
+
 chmod +x ISS-notify-applet.py
 
 cp ISS-notify-applet.py     /usr/local/bin/
