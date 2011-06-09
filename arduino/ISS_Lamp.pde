@@ -1,4 +1,4 @@
-**
+/**
  * Simple indicator lamp. There are RGB LED's on the pins. This will listen on 
  * the serial port and pulse colors of light when it hears a "1". It will stop
  * pulsing on a "0"
@@ -18,7 +18,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details at
  * http://www.gnu.org/copyleft/gpl.html
-*/
+ */
 
 static int redPin = 4;
 static int grePin = 9;
