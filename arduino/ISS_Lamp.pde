@@ -1,3 +1,25 @@
+**
+ * Simple indicator lamp. There are RGB LED's on the pins. This will listen on 
+ * the serial port and pulse colors of light when it hears a "1". It will stop
+ * pulsing on a "0"
+ *
+ * @author  Nathan Bergey <nathan.bergey@gmail.com>
+ * @version Wednesday, June 08 2011
+ *
+ * @section LICENSE
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
+ * the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details at
+ * http://www.gnu.org/copyleft/gpl.html
+*/
+
 static int redPin = 4;
 static int grePin = 9;
 static int bluPin = 5;

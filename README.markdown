@@ -21,8 +21,8 @@ When loaded it downloads a list of upcoming passes from [heavens-above.com](http
 
 Find this line in ISS-notify-applet.py
 
-    # Get Pass:
-    ha = HeavensAbove(45.47361, -122.64931)
+    class PyApplet():
+      ha = HeavensAbove(45.47361, -122.64931)
 
 and change the latitude and longitude to your location.
 
@@ -35,8 +35,7 @@ See the circuit diagram and firmware in the arduino folder. You might have to se
 Find this line in ISS-notify-applet.py
 
     class lamp():
-
-    device = '/dev/ttyACM0'
+      device = '/dev/ttyACM0'
 
 Make `/dev/ttyACM0` the right thing (`dmesg | tail` is often useful). Example of the udev rule that worked for me
 
