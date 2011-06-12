@@ -7,6 +7,21 @@ When loaded it downloads a list of upcoming passes from [heavens-above.com](http
 
 ## To install:
 
+Make sure you have the right packages installed
+
+    $ sudo apt-get install python python-gnomeapplet python-serial
+
+Then install it
+
+    $ sudo ./install.sh
+
+After the gnome pannel restarts right click and choose "add to panel". ISS-Notify should appear in the list.
+
+## To update:
+
+Get the latest code (`git pull`) then remove the applet from your panel if it's running and try
+
+    $ sudo ./uninstall.sh
     $ sudo ./install.sh
 
 ## To uninstall:
@@ -15,18 +30,20 @@ When loaded it downloads a list of upcoming passes from [heavens-above.com](http
 
 ## To test:
 
-    $ ./ISS-notify-applet.py run-in-window
-    
+    $ ./ISS-notify-applet.py -debug
+ 
+This will run the applet in it's own window and you can see print statements in the terminal you called if from. Great for debuging.  
+
 ## Setting your location:
 
 Find this line in ISS-notify-applet.py
 
     class PyApplet():
-      ha = HeavensAbove(45.47361, -122.64931)
+      ha = HeavensAbove(45.47361, -122.64931, 100, "PST")
 
 and change the latitude and longitude to your location.
 
-    ha = HeavensAbove(latitude, longitude)
+    ha = HeavensAbove(latitude, longitude, altitude, timezone)
 
 ## Connection to notification lamp
 
